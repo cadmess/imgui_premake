@@ -1,3 +1,6 @@
+--if our specified target output starts with "vs" for "visual studio", run our tweaks file.
+iif(string.sub(_ACTION,1,string.len("vs"))=="vs", include("premake5vstweaks.lua"), "")
+
 workspace "imgui_premake"
     configurations { "Debug", "Release" }
     -- startproject "imgui_glfw_vulkan"

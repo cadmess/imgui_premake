@@ -1,6 +1,5 @@
 #pragma once
 #include "ApplicationVulkan.h"
-#include "ApplicationOpengl.h"
 #include "Component.h"
 #include "imgui.h"
 
@@ -16,7 +15,7 @@ public:
 
 int main(int, char**)
 {
-    Application* app = new ApplicationOpengl();
+    Application* app = new ApplicationVulkan();
 
     app->Init(1280, 720, "Hello");
 
