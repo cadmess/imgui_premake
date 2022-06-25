@@ -5,12 +5,18 @@ project "test_project"
 	architecture "x64"
     staticruntime "off"
 
+    -- either of these can be set to false to totally disclude it
+    usevulkan = true
+    useopengl3 = true
+
     targetdir ("%{wks.location}/bin/%{output_dir}/%{prj.name}")
     objdir ("%{wks.location}/bin-int/%{output_dir}/%{prj.name}")
 
     includedirs {
         "include/",
-        "../imgui_glfw_vulkan/src",
+        "../common/src",
+        iif (usevulkan, "../imgui_glfw_vulkan/src", ""),
+        iif (useopengl3, "../imgui_glfw_opengl3/src", ""),
         "../../submodules/glfw/include/",
         "../../submodules/glm/",
         "../../submodules/imgui/",
@@ -24,7 +30,13 @@ project "test_project"
     }
 
     links {
-        "imgui_glfw_vulkan",
+        iif (usevulkan, "imgui_glfw_vulkan", ""),
+        iif (useopengl3, "imgui_glfw_opengl3", ""),
+    }
+
+    ignoredefaultlibraries {
+        "LIBCMTD",
+        "LIBCMT"
     }
 
     flags {

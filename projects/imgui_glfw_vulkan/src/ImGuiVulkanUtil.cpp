@@ -1,4 +1,4 @@
-#include "Backend.h"
+#include "ImGuiVulkanUtil.h"
 
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
@@ -7,7 +7,7 @@
 #include <vulkan/vulkan.h>
 
 
-void backend::check_vk_result(const VkResult err)
+void ImGuiVulkanUtil::check_vk_result(const VkResult err)
 {
     if (err == 0)
         return;
@@ -17,7 +17,7 @@ void backend::check_vk_result(const VkResult err)
 }
 
 #ifdef IMGUI_VULKAN_DEBUG_REPORT
-VKAPI_ATTR auto VKAPI_CALL backend::debug_report(const VkDebugReportFlagsEXT flags,
+VKAPI_ATTR auto VKAPI_CALL ImGuiVulkanUtil::debug_report(const VkDebugReportFlagsEXT flags,
                                                  const VkDebugReportObjectTypeEXT objectType, const uint64_t object,
                                                  const size_t location, const int32_t messageCode, const char* pLayerPrefix,
                                                  const char* pMessage, void* pUserData) -> VkBool32
@@ -28,7 +28,7 @@ VKAPI_ATTR auto VKAPI_CALL backend::debug_report(const VkDebugReportFlagsEXT fla
 }
 #endif // IMGUI_VULKAN_DEBUG_REPORT
 
-void backend::SetupVulkan(const char** extensions, const uint32_t extensions_count)
+void ImGuiVulkanUtil::SetupVulkan(const char** extensions, const uint32_t extensions_count)
 {
     VkResult err;
 
@@ -172,7 +172,7 @@ void backend::SetupVulkan(const char** extensions, const uint32_t extensions_cou
 
 // All the ImGui_ImplVulkanH_XXX structures/functions are optional helpers used by the demo.
 // Your real engine/app may not use them.
-void backend::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, const int width, const int height)
+void ImGuiVulkanUtil::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, const int width, const int height)
 {
     wd->Surface = surface;
 
@@ -204,7 +204,7 @@ void backend::SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surfa
     ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, wd, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
 }
 
-void backend::CleanupVulkan()
+void ImGuiVulkanUtil::CleanupVulkan()
 {
     vkDestroyDescriptorPool(g_Device, g_DescriptorPool, g_Allocator);
 
@@ -219,12 +219,12 @@ void backend::CleanupVulkan()
     vkDestroyInstance(g_Instance, g_Allocator);
 }
 
-void backend::CleanupVulkanWindow()
+void ImGuiVulkanUtil::CleanupVulkanWindow()
 {
     ImGui_ImplVulkanH_DestroyWindow(g_Instance, g_Device, &g_MainWindowData, g_Allocator);
 }
 
-void backend::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
+void ImGuiVulkanUtil::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 {
 	VkSemaphore image_acquired_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].ImageAcquiredSemaphore;
     VkSemaphore render_complete_semaphore = wd->FrameSemaphores[wd->SemaphoreIndex].RenderCompleteSemaphore;
@@ -290,7 +290,7 @@ void backend::FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
     }
 }
 
-void backend::FramePresent(ImGui_ImplVulkanH_Window* wd)
+void ImGuiVulkanUtil::FramePresent(ImGui_ImplVulkanH_Window* wd)
 {
     if (g_SwapChainRebuild)
         return;
@@ -310,9 +310,4 @@ void backend::FramePresent(ImGui_ImplVulkanH_Window* wd)
     }
     check_vk_result(err);
     wd->SemaphoreIndex = (wd->SemaphoreIndex + 1) % wd->ImageCount; // Now we can use the next set of semaphores
-}
-
-void backend::glfw_error_callback(const int error, const char* description)
-{
-    fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }

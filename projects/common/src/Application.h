@@ -3,13 +3,17 @@
 #include <memory>
 #include <vector>
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan_core.h>
 
 #include "Component.h"
 
 class Application
 {
 public:
+	std::vector<std::shared_ptr<Component>> m_ComponentStack;
+	GLFWwindow* m_windowHandle;
+	bool m_running = true;
+	std::function<void()> m_menuBarCallback;
+
 	template<typename T>
 	void PushComponent()
 	{
@@ -22,18 +26,16 @@ public:
 		m_ComponentStack.emplace_back(component); component->OnAttach();
 	}
 
-	int Init();
-	void Run();
-	void Close();
-	static VkInstance GetInstance();
-	static VkPhysicalDevice GetPhysicalDevice();
-	static VkDevice GetDevice();
-	static VkCommandBuffer GetCommandBuffer();
-	static void FlushCommandBuffer(VkCommandBuffer commandBuffer);
+	static void glfw_error_callback(const int error, const char* description)
+	{
+		fprintf(stderr, "Glfw Error %d: %s\n", error, description);
+	}
 
+	virtual ~Application() {}
 
-	std::vector<std::shared_ptr<Component>> m_ComponentStack;
-	GLFWwindow* m_windowHandle;
-	bool m_running = true;
-	std::function<void()> m_menuBarCallback;
+    virtual int Init(int width, int height, char* description) = 0;
+
+	virtual int Run() = 0;
+
+	virtual void Close() = 0;
 };

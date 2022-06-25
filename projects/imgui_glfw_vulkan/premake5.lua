@@ -10,6 +10,7 @@ project "imgui_glfw_vulkan"
 
     includedirs {
         "include/",
+        "../common/src/",
         "../../submodules/glfw/include/",
         "../../submodules/glm/",
         "../../submodules/imgui/",
@@ -20,7 +21,6 @@ project "imgui_glfw_vulkan"
     files {
         "src/**.h",
         "src/**.cpp"
-        
     }
 
     links {

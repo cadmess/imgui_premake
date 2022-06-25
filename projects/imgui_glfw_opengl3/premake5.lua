@@ -1,5 +1,5 @@
 project "imgui_glfw_opengl3"
-    kind "ConsoleApp"
+    kind "StaticLib"
     language "C++"
     cppdialect "C++17"
 	architecture "x64"
@@ -10,6 +10,7 @@ project "imgui_glfw_opengl3"
 
     includedirs {
         "include/",
+        "../common/src/",
         "../../submodules/glad/include/",
         "../../submodules/glfw/include/",
         "../../submodules/glm/",
@@ -28,6 +29,11 @@ project "imgui_glfw_opengl3"
         "glad",
         "imgui",
         "opengl32.lib"
+    }
+
+    ignoredefaultlibraries {
+        "LIBCMTD",
+        "LIBCMT"
     }
 
     flags {

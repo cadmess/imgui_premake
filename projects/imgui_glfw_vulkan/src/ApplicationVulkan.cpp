@@ -1,21 +1,21 @@
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
 #include <cstdio>          // printf, fprintf
-#include "Application.h"
-#include "Backend.h"
+#include "ApplicationVulkan.h"
+#include "ImGuiVulkanUtil.h"
 #include <GLFW/glfw3.h>
 
 
 
-int Application::Init()
+int ApplicationVulkan::Init(int width, int height, char* description)
 {
-	    // Setup GLFW window
-    glfwSetErrorCallback(backend::glfw_error_callback);
+    // Setup GLFW window
+    glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    m_windowHandle = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+Vulkan example", nullptr, nullptr);
+    m_windowHandle = glfwCreateWindow(width, height, description, nullptr, nullptr);
 
     // Setup Vulkan
     if (!glfwVulkanSupported())
@@ -25,18 +25,18 @@ int Application::Init()
     }
     uint32_t extensions_count = 0;
     const char** extensions = glfwGetRequiredInstanceExtensions(&extensions_count);
-    backend::SetupVulkan(extensions, extensions_count);
+    ImGuiVulkanUtil::SetupVulkan(extensions, extensions_count);
 
     // Create Window Surface
     VkSurfaceKHR surface;
-    VkResult err = glfwCreateWindowSurface(backend::g_Instance, m_windowHandle, backend::g_Allocator, &surface);
-    backend::check_vk_result(err);
+    VkResult err = glfwCreateWindowSurface(ImGuiVulkanUtil::g_Instance, m_windowHandle, ImGuiVulkanUtil::g_Allocator, &surface);
+    ImGuiVulkanUtil::check_vk_result(err);
 
     // Create Framebuffers
     int w, h;
     glfwGetFramebufferSize(m_windowHandle, &w, &h);
-    ImGui_ImplVulkanH_Window* wd = &backend::g_MainWindowData;
-    backend::SetupVulkanWindow(wd, surface, w, h);
+    ImGui_ImplVulkanH_Window* wd = &ImGuiVulkanUtil::g_MainWindowData;
+    ImGuiVulkanUtil::SetupVulkanWindow(wd, surface, w, h);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -50,7 +50,7 @@ int Application::Init()
     //io.ConfigViewportsNoTaskBarIcon = true;
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
 
     // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
@@ -61,22 +61,22 @@ int Application::Init()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    // Setup Platform/Renderer backends
+    // Setup Platform/Renderer ImGuiVulkanUtils
     ImGui_ImplGlfw_InitForVulkan(m_windowHandle, true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = backend::g_Instance;
-    init_info.PhysicalDevice = backend::g_PhysicalDevice;
-    init_info.Device = backend::g_Device;
-    init_info.QueueFamily = backend::g_QueueFamily;
-    init_info.Queue = backend::g_Queue;
-    init_info.PipelineCache = backend::g_PipelineCache;
-    init_info.DescriptorPool = backend::g_DescriptorPool;
+    init_info.Instance = ImGuiVulkanUtil::g_Instance;
+    init_info.PhysicalDevice = ImGuiVulkanUtil::g_PhysicalDevice;
+    init_info.Device = ImGuiVulkanUtil::g_Device;
+    init_info.QueueFamily = ImGuiVulkanUtil::g_QueueFamily;
+    init_info.Queue = ImGuiVulkanUtil::g_Queue;
+    init_info.PipelineCache = ImGuiVulkanUtil::g_PipelineCache;
+    init_info.DescriptorPool = ImGuiVulkanUtil::g_DescriptorPool;
     init_info.Subpass = 0;
-    init_info.MinImageCount = backend::g_MinImageCount;
+    init_info.MinImageCount = ImGuiVulkanUtil::g_MinImageCount;
     init_info.ImageCount = wd->ImageCount;
     init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-    init_info.Allocator = backend::g_Allocator;
-    init_info.CheckVkResultFn = backend::check_vk_result;
+    init_info.Allocator = ImGuiVulkanUtil::g_Allocator;
+    init_info.CheckVkResultFn = ImGuiVulkanUtil::check_vk_result;
     ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
 
     // Load Fonts
@@ -100,13 +100,13 @@ int Application::Init()
         VkCommandPool command_pool = wd->Frames[wd->FrameIndex].CommandPool;
         VkCommandBuffer command_buffer = wd->Frames[wd->FrameIndex].CommandBuffer;
 
-        err = vkResetCommandPool(backend::g_Device, command_pool, 0);
-        backend::check_vk_result(err);
+        err = vkResetCommandPool(ImGuiVulkanUtil::g_Device, command_pool, 0);
+        ImGuiVulkanUtil::check_vk_result(err);
         VkCommandBufferBeginInfo begin_info = {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         err = vkBeginCommandBuffer(command_buffer, &begin_info);
-        backend::check_vk_result(err);
+        ImGuiVulkanUtil::check_vk_result(err);
 
         ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
 
@@ -115,20 +115,20 @@ int Application::Init()
         end_info.commandBufferCount = 1;
         end_info.pCommandBuffers = &command_buffer;
         err = vkEndCommandBuffer(command_buffer);
-        backend::check_vk_result(err);
-        err = vkQueueSubmit(backend::g_Queue, 1, &end_info, VK_NULL_HANDLE);
-        backend::check_vk_result(err);
+        ImGuiVulkanUtil::check_vk_result(err);
+        err = vkQueueSubmit(ImGuiVulkanUtil::g_Queue, 1, &end_info, VK_NULL_HANDLE);
+        ImGuiVulkanUtil::check_vk_result(err);
 
-        err = vkDeviceWaitIdle(backend::g_Device);
-        backend::check_vk_result(err);
+        err = vkDeviceWaitIdle(ImGuiVulkanUtil::g_Device);
+        ImGuiVulkanUtil::check_vk_result(err);
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
-	return 0;
+    return 0;
 }
 
-void Application::Run()
+int ApplicationVulkan::Run()
 {
-    ImGui_ImplVulkanH_Window* wd = &backend::g_MainWindowData;
+    ImGui_ImplVulkanH_Window* wd = &ImGuiVulkanUtil::g_MainWindowData;
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     constexpr ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     // Main loop
@@ -142,16 +142,16 @@ void Application::Run()
         glfwPollEvents();
 
         // Resize swap chain?
-        if (backend::g_SwapChainRebuild)
+        if (ImGuiVulkanUtil::g_SwapChainRebuild)
         {
             int width, height;
             glfwGetFramebufferSize(m_windowHandle, &width, &height);
             if (width > 0 && height > 0)
             {
-                ImGui_ImplVulkan_SetMinImageCount(backend::g_MinImageCount);
-                ImGui_ImplVulkanH_CreateOrResizeWindow(backend::g_Instance, backend::g_PhysicalDevice, backend::g_Device, &backend::g_MainWindowData, backend::g_QueueFamily, backend::g_Allocator, width, height, backend::g_MinImageCount);
-                backend::g_MainWindowData.FrameIndex = 0;
-                backend::g_SwapChainRebuild = false;
+                ImGui_ImplVulkan_SetMinImageCount(ImGuiVulkanUtil::g_MinImageCount);
+                ImGui_ImplVulkanH_CreateOrResizeWindow(ImGuiVulkanUtil::g_Instance, ImGuiVulkanUtil::g_PhysicalDevice, ImGuiVulkanUtil::g_Device, &ImGuiVulkanUtil::g_MainWindowData, ImGuiVulkanUtil::g_QueueFamily, ImGuiVulkanUtil::g_Allocator, width, height, ImGuiVulkanUtil::g_MinImageCount);
+                ImGuiVulkanUtil::g_MainWindowData.FrameIndex = 0;
+                ImGuiVulkanUtil::g_SwapChainRebuild = false;
             }
         }
 
@@ -204,7 +204,7 @@ void Application::Run()
             {
                 if (ImGui::BeginMenuBar())
                 {
-	                m_menuBarCallback();
+                    m_menuBarCallback();
                     ImGui::EndMenuBar();
                 }
             }
@@ -224,7 +224,7 @@ void Application::Run()
         wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
         wd->ClearValue.color.float32[3] = clear_color.w;
         if (!main_is_minimized)
-            backend::FrameRender(wd, main_draw_data);
+            ImGuiVulkanUtil::FrameRender(wd, main_draw_data);
 
         // Update and Render additional Platform Windows
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -235,47 +235,48 @@ void Application::Run()
 
         // Present Main Platform Window
         if (!main_is_minimized)
-            backend::FramePresent(wd);
+            ImGuiVulkanUtil::FramePresent(wd);
     }
 
     // Cleanup
-    backend::check_vk_result(vkDeviceWaitIdle(backend::g_Device));
+    ImGuiVulkanUtil::check_vk_result(vkDeviceWaitIdle(ImGuiVulkanUtil::g_Device));
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    backend::CleanupVulkanWindow();
-    backend::CleanupVulkan();
+    ImGuiVulkanUtil::CleanupVulkanWindow();
+    ImGuiVulkanUtil::CleanupVulkan();
 
     glfwDestroyWindow(this->m_windowHandle);
     glfwTerminate();
 
     this->Close();
+    return 0;
 }
 
-void Application::Close()
+void ApplicationVulkan::Close()
 {
     m_running = false;
 }
 
-VkInstance Application::GetInstance()
+VkInstance ApplicationVulkan::GetInstance()
 {
-    return backend::g_Instance;
+    return ImGuiVulkanUtil::g_Instance;
 }
 
-VkPhysicalDevice Application::GetPhysicalDevice()
+VkPhysicalDevice ApplicationVulkan::GetPhysicalDevice()
 {
-    return backend::g_PhysicalDevice;
+    return ImGuiVulkanUtil::g_PhysicalDevice;
 }
 
-VkDevice Application::GetDevice()
+VkDevice ApplicationVulkan::GetDevice()
 {
-    return backend::g_Device;
+    return ImGuiVulkanUtil::g_Device;
 }
 
-VkCommandBuffer Application::GetCommandBuffer()
+VkCommandBuffer ApplicationVulkan::GetCommandBuffer()
 {
-	const ImGui_ImplVulkanH_Window* wd = &backend::g_MainWindowData;
+    const ImGui_ImplVulkanH_Window* wd = &ImGuiVulkanUtil::g_MainWindowData;
 
     VkCommandBufferAllocateInfo cmdBufAllocateInfo = {};
     cmdBufAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -284,18 +285,18 @@ VkCommandBuffer Application::GetCommandBuffer()
     cmdBufAllocateInfo.commandBufferCount = 1;
 
     VkCommandBuffer command_buffer;
-    auto err = vkAllocateCommandBuffers(backend::g_Device, &cmdBufAllocateInfo, &command_buffer);
+    auto err = vkAllocateCommandBuffers(ImGuiVulkanUtil::g_Device, &cmdBufAllocateInfo, &command_buffer);
 
     VkCommandBufferBeginInfo begin_info = {};
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     err = vkBeginCommandBuffer(command_buffer, &begin_info);
-    backend::check_vk_result(err);
+    ImGuiVulkanUtil::check_vk_result(err);
 
     return command_buffer;
 }
 
-void Application::FlushCommandBuffer(VkCommandBuffer commandBuffer)
+void ApplicationVulkan::FlushCommandBuffer(VkCommandBuffer commandBuffer)
 {
     constexpr uint64_t DEFAULT_FENCE_TIMEOUT = 100000000000;
 
@@ -304,21 +305,21 @@ void Application::FlushCommandBuffer(VkCommandBuffer commandBuffer)
     end_info.commandBufferCount = 1;
     end_info.pCommandBuffers = &commandBuffer;
     auto err = vkEndCommandBuffer(commandBuffer);
-    backend::check_vk_result(err);
+    ImGuiVulkanUtil::check_vk_result(err);
 
     // Create fence to ensure that the command buffer has finished executing
     VkFenceCreateInfo fenceCreateInfo = {};
     fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceCreateInfo.flags = 0;
     VkFence fence;
-    err = vkCreateFence(backend::g_Device, &fenceCreateInfo, nullptr, &fence);
-    backend::check_vk_result(err);
+    err = vkCreateFence(ImGuiVulkanUtil::g_Device, &fenceCreateInfo, nullptr, &fence);
+    ImGuiVulkanUtil::check_vk_result(err);
 
-    err = vkQueueSubmit(backend::g_Queue, 1, &end_info, fence);
-    backend::check_vk_result(err);
+    err = vkQueueSubmit(ImGuiVulkanUtil::g_Queue, 1, &end_info, fence);
+    ImGuiVulkanUtil::check_vk_result(err);
 
-    err = vkWaitForFences(backend::g_Device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
-    backend::check_vk_result(err);
+    err = vkWaitForFences(ImGuiVulkanUtil::g_Device, 1, &fence, VK_TRUE, DEFAULT_FENCE_TIMEOUT);
+    ImGuiVulkanUtil::check_vk_result(err);
 
-    vkDestroyFence(backend::g_Device, fence, nullptr);
+    vkDestroyFence(ImGuiVulkanUtil::g_Device, fence, nullptr);
 }

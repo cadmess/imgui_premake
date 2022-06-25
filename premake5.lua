@@ -9,6 +9,7 @@ vulkan_sdk = os.getenv("VULKAN_SDK")
 print("using vulkan sdk path: " .. vulkan_sdk)
 
 -- root-level projects should go before submodule scripts, lest they override your solution.
+include "projects/common"
 include "projects/imgui_glfw_opengl3"
 include "projects/imgui_glfw_vulkan"
 include "projects/test_project"

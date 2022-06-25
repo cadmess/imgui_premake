@@ -5,7 +5,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <vulkan/vulkan.h>
 
-class backend
+class ImGuiVulkanUtil
 {
     // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
     // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
@@ -52,6 +52,4 @@ public:
     static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data);
 
     static void FramePresent(ImGui_ImplVulkanH_Window* wd);
-
-    static void glfw_error_callback(int error, const char* description);
 };
